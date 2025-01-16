@@ -16,9 +16,9 @@
         <li>
           <strong>三庭比例：</strong>
           <ul>
-            <li>中庭与上下庭比例的差异: {{ results[0].Three_Section_Metric_A || '数据缺失' }}%</li>
-            <li>中庭高度与整体平均比例的偏差: {{ results[0].Three_Section_Metric_B || '数据缺失' }}%</li>
-            <li>上下庭对称性的偏差: {{ results[0].Three_Section_Metric_C || '数据缺失' }}%</li>
+            <li>中庭与上下庭比例的差异: {{ results[0].Three_Section_Metric_A || '数据缺失' }}</li>
+            <li>中庭高度与整体平均比例的偏差: {{ results[0].Three_Section_Metric_B || '数据缺失' }}</li>
+            <li>上下庭对称性的偏差: {{ results[0].Three_Section_Metric_C || '数据缺失' }}</li>
           </ul>
           <p>描述：人脸垂直方向被划分为“上庭（额头）”、“中庭（鼻子）”、“下庭（嘴巴和下巴）”三部分，三庭比例衡量这些区域的高度是否符合理想。三个数据越小越好。</p>
         </li>
@@ -30,8 +30,8 @@
         <li>
           <strong>内眼角开合度：</strong>
           <ul>
-            <li>左眼内角开合度: {{ results[0].EB_Metric_G || '数据缺失' }}%</li>
-            <li>右眼内角开合度: {{ results[0].EB_Metric_H || '数据缺失' }}%</li>
+            <li>左眼内角开合度: {{ results[0].EB_Metric_G || '数据缺失' }}°</li>
+            <li>右眼内角开合度: {{ results[0].EB_Metric_H || '数据缺失' }}°</li>
           </ul>
           <p>描述：角度越接近理想值（50°），眼部开合越自然美观。</p>
         </li>

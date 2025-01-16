@@ -118,23 +118,24 @@ class FaceMeshProcessor:
 
 
     def calculate_overall_score(self, metrics):
-        # 简单加权评分模型（可调整权重）
         weights = {
-            'Five_Eye_Metrics': -1,  # 越小越好
+            'Five_Eye_Metrics': -1,  
             'Three_Section_Metric_A': -1,
             'Three_Section_Metric_B': -1,
             'Three_Section_Metric_C': -1,
-            'Da_Vinci': 1.,  # 越接近黄金比例越好
-            'EB_Metric_G': -0.8,  # 角度越接近理想值越好
+            'Da_Vinci': 1.,
+            'EB_Metric_G': -0.8,
             'EB_Metric_H': -0.8
         }
         ideal_values = {
-            'Da_Vinci': 1.5,  # 理想达芬奇比例
-            'EB_Metric_G': 50,  # 理想角度
+            'Da_Vinci': 1.5,  
+            'EB_Metric_G': 50,  
             'EB_Metric_H': 50
         }
 
         score = 0
+        max_score = sum(abs(weight) * 100 for weight in weights.values())  # 最大可能分数
+
         for key, weight in weights.items():
             value = metrics.get(key, 0)
             ideal = ideal_values.get(key, 0)
@@ -143,7 +144,14 @@ class FaceMeshProcessor:
             else:
                 score += weight * max(0, (1 - value / ideal) * 100)
 
-        return max(0, score)
+        # 归一化并优化分数
+        normalized_score = max(0, min(100, (score / max_score) * 100))
+        boosted_score = min(100, (normalized_score ** 0.5) * 10)
+        for _ in range(2):
+            boosted_score = min(100, (boosted_score ** 0.5) * 10)
+
+        return boosted_score
+
 
     def display_metrics(self, img, metrics):
         y_offset = 30

@@ -33,6 +33,7 @@ class FaceMeshProcessor:
 
         metrics_list = []
         if results.multi_face_landmarks:
+            metrics_list.append({ "Face_Detected" : True})
             for face_landmarks in results.multi_face_landmarks:
                 # 绘制特征点
                 self.drawing_utils.draw_landmarks(
@@ -45,6 +46,8 @@ class FaceMeshProcessor:
                 metrics = self.calculate_metrics(face_landmarks, h, w)
                 metrics_list.append(metrics)
                 self.display_metrics(img, metrics)
+        else:
+            metrics_list.append({ "Face_Detected" : False})
 
         return img, metrics_list
 

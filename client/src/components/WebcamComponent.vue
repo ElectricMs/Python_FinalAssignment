@@ -1,55 +1,54 @@
 <template>
-  <div>
-    <div v-if="imageSrc">
+  <div class="webcam-container">
+    <div v-if="imageSrc" class="image-container">
       <h2>实时画面</h2>
-      <img :src="imageSrc" alt="Webcam Stream" />
+      <img :src="imageSrc" alt="Webcam Stream" class="webcam-image" />
     </div>
 
-    <div v-if="results && results.length > 0">
+    <div v-if="results && Array.isArray(results) && results.length > 1" class="results-container">
       <h2>实时分析结果</h2>
-      <ul>
+      <ul class="results-list">
         <li>
           <strong>五眼比例：</strong>
-          {{ results[1]?.Five_Eye_Metrics || '数据缺失' }} (五眼比例)
-          <p>描述：，“五眼比例”表示两眼之间的距离是否对称以及是否符合理想比例。五眼比例偏差越小，脸部宽度分布越对称。</p>
+          {{ results[1]?.Five_Eye_Metrics || '数据缺失' }}
+          <p>五眼比例偏差越小，脸部宽度分布越对称。</p>
         </li>
         <li>
           <strong>三庭比例：</strong>
-          <ul>
+          <ul class="sub-results-list">
             <li>中庭与上下庭比例的差异: {{ results[1]?.Three_Section_Metric_A || '数据缺失' }}</li>
             <li>中庭高度与整体平均比例的偏差: {{ results[1]?.Three_Section_Metric_B || '数据缺失' }}</li>
             <li>上下庭对称性的偏差: {{ results[1]?.Three_Section_Metric_C || '数据缺失' }}</li>
           </ul>
-          <p>描述：人脸垂直方向被划分为“上庭（额头）”、“中庭（鼻子）”、“下庭（嘴巴和下巴）”三部分，三庭比例衡量这些区域的高度是否符合理想。三个数据越小越好。</p>
+          <p>三庭比例衡量脸部区域高度是否符合理想。</p>
         </li>
         <li>
           <strong>达芬奇比例：</strong>
-          {{ results[1]?.Da_Vinci || '数据缺失' }} (黄金比例)
-          <p>描述：达芬奇比例接近黄金比例1.618是面部对称的理想值。</p>
+          {{ results[1]?.Da_Vinci || '数据缺失' }}
+          <p>黄金比例接近1.618是理想的面部对称值。</p>
         </li>
         <li>
           <strong>内眼角开合度：</strong>
-          <ul>
-            <li>左眼内角开合度: {{ results[1]?.EB_Metric_G || '数据缺失' }}°</li>
-            <li>右眼内角开合度: {{ results[1]?.EB_Metric_H || '数据缺失' }}°</li>
+          <ul class="sub-results-list">
+            <li>左眼内角: {{ results[1]?.EB_Metric_G || '数据缺失' }}°</li>
+            <li>右眼内角: {{ results[1]?.EB_Metric_H || '数据缺失' }}°</li>
           </ul>
-          <p>描述：角度越接近理想值（50°），眼部开合越自然美观。</p>
+          <p>角度接近50°，更美观。</p>
         </li>
         <li>
           <strong>综合评分：</strong>
-          {{ results[1]?.Overall_Score || '数据缺失' }} (颜值综合评分)
-          <p>描述：该评分结合了五眼比例、三庭比例等指标来评估颜值的综合评分。</p>
+          {{ results[1]?.Overall_Score || '数据缺失' }}
+          <p>综合评分结合多项指标评估颜值。</p>
         </li>
       </ul>
     </div>
 
-
-    <div v-if="results">
+    <div v-if="results && Array.isArray(results) && results.length > 1" class="full-results-container">
       <h3>完整结果：</h3>
-      <pre>{{ results }}</pre> <!-- 显示完整的 results 对象 -->
+      <pre class="results-pre">{{ results }}</pre>
     </div>
 
-    <button @click="startWebSocket">开始实时打分</button>
+    <button v-if="buttonshow" @click="startWebSocket" class="start-button">开始实时打分</button>
   </div>
 </template>
 
@@ -57,41 +56,43 @@
 export default {
   data() {
     return {
-      websocket: null, // WebSocket 实例
-      imageSrc: null,  // 实时图像
-      results: null,   // 分析结果
+      buttonshow: true,
+      websocket: null,
+      imageSrc: null,
+      results: [],
     };
   },
   methods: {
     startWebSocket() {
-      // 建立 WebSocket 连接
+      if(this.buttonshow==true){
+        this.buttonshow = false;
+      }
+
       this.websocket = new WebSocket("ws://127.0.0.1:8000/ws");
 
-      // 处理 WebSocket 消息
       this.websocket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-
-        if (data.image) {
-          // 更新图像
-          this.imageSrc = `data:image/jpeg;base64,${data.image}`;
-        }
-        if (data.results) {
-          // 更新分析结果
-          this.results = data.results;
-        }
-        if (data.error) {
-          // 显示错误信息
-          alert(data.error);
+        try {
+          const data = JSON.parse(event.data);
+          if (data.image) {
+            this.imageSrc = `data:image/jpeg;base64,${data.image}`;
+          }
+          if (data.results) {
+            this.results = Array.isArray(data.results) ? data.results : [data.results];
+          }
+          if (data.error) {
+            alert(data.error);
+          }
+        } catch (error) {
+          console.error("Error parsing WebSocket message:", error);
+          alert("解析 WebSocket 消息失败！");
         }
       };
 
-      // 错误处理
       this.websocket.onerror = (error) => {
         console.error("WebSocket Error:", error);
-        alert("连接失败，请检查后端服务是否启动！");
+        alert("连接失败，请检查后端服务！");
       };
 
-      // 关闭连接
       this.websocket.onclose = () => {
         console.log("WebSocket connection closed");
         this.websocket = null;
@@ -102,30 +103,37 @@ export default {
 </script>
 
 <style>
-img {
-  max-width: 600px;
-  border: 2px solid #ccc;
-  margin: 20px 0;
+.webcam-container {
+  font-family: 'Roboto', sans-serif;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
-button {
-  margin-top: 20px;
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-button:hover {
-  background-color: #0056b3;
-}
-
-h2 {
-  font-size: 24px;
+.image-container {
+  text-align: center;
   margin-bottom: 20px;
+}
+
+.webcam-image {
+  max-width: 100%;
+  border: 4px solid #ddd;
+  border-radius: 12px;
+  transition: transform 0.3s ease;
+}
+
+.webcam-image:hover {
+  transform: scale(1.05);
+}
+
+h2, h3 {
+  font-size: 20px;
+  margin-bottom: 15px;
+  color: #333;
 }
 
 ul {
@@ -133,8 +141,21 @@ ul {
   padding: 0;
 }
 
-ul li {
+.results-list li {
   margin-bottom: 15px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-left: 4px solid #007bff;
+  border-radius: 6px;
+  transition: background-color 0.3s;
+}
+
+.results-list li:hover {
+  background-color: #eef5ff;
+}
+
+.sub-results-list {
+  margin-left: 20px;
 }
 
 strong {
@@ -143,7 +164,33 @@ strong {
 
 p {
   font-size: 14px;
-  color: #555;
+  color: #666;
   margin-top: 5px;
+}
+
+.start-button {
+  display: block;
+  margin: 20px auto 0;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.start-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+.results-pre {
+  background-color: #f4f4f4;
+  padding: 10px;
+  border-radius: 8px;
+  overflow-x: auto;
 }
 </style>

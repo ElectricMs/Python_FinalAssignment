@@ -1,54 +1,41 @@
 <template>
-  <div>
-    <div v-if="imageSrc">
+  <div class="webcam-container">
+    <div v-if="imageSrc" class="image-container">
       <h2>实时画面</h2>
-      <img :src="imageSrc" alt="Webcam Stream" />
+      <img :src="imageSrc" alt="Webcam Stream" class="webcam-image" />
     </div>
 
-    <!-- 调试区域 -->
-    <!-- <div v-if="results && results.length > 0" class="debug-section">
-      <h3>调试信息</h3>
-      <pre>{{ JSON.stringify(results[0], null, 2) }}</pre>
-    </div> -->
-
-    <div v-if="results && results.length > 0">
+    <div v-if="results && results.length > 0" class="results-container">
       <h2>实时分析结果</h2>
-      <ul>
-        <!-- 五眼比例 -->
+      <ul class="results-list">
         <li>
           <strong>五眼比例：</strong>
           {{ results[0].five_eye_metrics || '数据缺失' }} (五眼比例)
           <p>描述：五眼比例表示两眼之间的距离对称性以及是否符合理想比例。偏差越小，脸部宽度分布越对称。</p>
         </li>
 
-        <!-- 三庭比例 -->
         <li>
           <strong>三庭比例：</strong>
-          <ul v-if="results[0].three_section_metrics">
+          <ul v-if="results[0].three_section_metrics" class="sub-results-list">
             <li>中庭与上下庭比例的差异: {{ results[0].three_section_metrics.metric_a || '数据缺失' }}</li>
             <li>中庭高度与整体平均比例的偏差: {{ results[0].three_section_metrics.metric_b || '数据缺失' }}</li>
             <li>上下庭对称性的偏差: {{ results[0].three_section_metrics.metric_c || '数据缺失' }}</li>
           </ul>
           <p>描述：人脸垂直方向被划分为"上庭（额头）"、"中庭（鼻子）"、"下庭（嘴巴和下巴）"三部分，衡量这些区域的高度比例。数值越小越好。</p>
         </li>
-
-        <!-- 达芬奇比例 -->
         <li>
           <strong>达芬奇比例：</strong>
           {{ results[0].da_vinci_ratio || '数据缺失' }} (黄金比例)
-          <p>描述：达芬奇比例接近黄金比例1.618是面部对称的理想值。</p>
+          <p>黄金比例接近1.618是理想的面部对称值。</p>
         </li>
-
-        <!-- 内眼角开合度 -->
         <li>
           <strong>内眼角开合度：</strong>
-          <ul v-if="results[0].eye_angle_metrics">
+          <ul v-if="results[0].eye_angle_metrics" class="sub-results-list">
             <li>左眼内角开合度: {{ results[0].eye_angle_metrics.left_eye || '数据缺失' }}°</li>
             <li>右眼内角开合度: {{ results[0].eye_angle_metrics.right_eye || '数据缺失' }}°</li>
           </ul>
           <p>描述：角度越接近理想值（50°），眼部开合越自然美观。</p>
         </li>
-
         <!-- 对称性评分 -->
         <li v-if="results[0].symmetry_metrics">
           <strong>面部对称性：</strong>
@@ -60,7 +47,6 @@
           </ul>
           <p>描述：评估面部左右对称程度，分数越高表示对称性越好。</p>
         </li>
-
         <!-- 黄金分割比例 -->
         <li v-if="results[0].golden_ratio_metrics">
           <strong>黄金分割比例：</strong>
@@ -72,7 +58,6 @@
           </ul>
           <p>描述：评估面部各部分是否符合黄金分割比例，分数越高表示越接近理想比例。</p>
         </li>
-
         <!-- 脸型分析 -->
         <li v-if="results[0].face_shape_metrics">
           <strong>脸型分析：</strong>
@@ -93,9 +78,13 @@
       </ul>
     </div>
 
-    <button @click="startWebSocket" :disabled="isConnected">
-      {{ isConnected ? '已连接' : '开始实时打分' }}
-    </button>
+    <div v-if="results" class="full-results-container">
+      <h3>完整结果：</h3>
+      <pre class="results-pre">{{ results }}</pre>
+    </div>
+
+    <button v-if="buttonshow" @click="startWebSocket" class="start-button">开始实时打分</button>
+    <button v-if="imageSrc" @click="changePage" class="start-button">结束打分</button>
   </div>
 </template>
 
@@ -103,6 +92,7 @@
 export default {
   data() {
     return {
+      buttonshow: true,
       websocket: null,
       imageSrc: null,
       results: null,
@@ -112,12 +102,12 @@ export default {
   },
   methods: {
     startWebSocket() {
-      if (this.websocket) {
-        return;
+      if(this.buttonshow==true){
+        this.buttonshow = false;
       }
 
-      // 生成唯一的客户端ID
-      this.clientId = 'client_' + Date.now();
+            // 生成唯一的客户端ID
+            this.clientId = 'client_' + Date.now();
       
       // 使用新的WebSocket地址格式
       this.websocket = new WebSocket(`ws://127.0.0.1:8000/api/v1/ws/${this.clientId}`);
@@ -180,68 +170,52 @@ export default {
         'lip_nose_ratio': '嘴唇-鼻子比例'
       };
       return ratioNames[key] || key;
-    }
-  },
+    },
+    changePage() {
 
-  beforeUnmount() {
-    if (this.websocket) {
-      this.websocket.close();
+      // 准备要更新的数据
+      const newImageSrc = this.imageSrc;
+      const newJsonData =this.results;
+
+        // 分别调用两个actions来更新Vuex状态
+      this.$store.dispatch('updateImageSrc', newImageSrc);
+      this.$store.dispatch('updateJsonData', newJsonData);
+      this.$router.push('/result');
+
     }
   },
 };
 </script>
 
-<style scoped>
-.debug-section {
-  margin: 20px;
+<style>
+.webcam-container {
+  font-family: 'Roboto', sans-serif;
+  max-width: 800px;
+  margin: 0 auto;
   padding: 20px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
-  font-family: monospace;
-}
-
-.debug-section pre {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  margin: 0;
-  padding: 10px;
   background-color: #ffffff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
-img {
-  max-width: 600px;
-  border: 2px solid #ccc;
-  margin: 20px 0;
-}
-
-button {
-  margin-top: 20px;
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-button:not(:disabled):hover {
-  background-color: #0056b3;
-}
-
-h2 {
-  font-size: 24px;
+.image-container {
+  text-align: center;
   margin-bottom: 20px;
 }
 
-h3 {
+.webcam-image {
+  max-width: 100%;
+  border: 4px solid #ddd;
+  border-radius: 12px;
+  transition: transform 0.3s ease;
+}
+
+.webcam-image:hover {
+  transform: scale(1.05);
+}
+
+h2, h3 {
   font-size: 20px;
   margin-bottom: 15px;
   color: #333;
@@ -252,8 +226,21 @@ ul {
   padding: 0;
 }
 
-ul li {
+.results-list li {
   margin-bottom: 15px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-left: 4px solid #007bff;
+  border-radius: 6px;
+  transition: background-color 0.3s;
+}
+
+.results-list li:hover {
+  background-color: #eef5ff;
+}
+
+.sub-results-list {
+  margin-left: 20px;
 }
 
 strong {
@@ -262,12 +249,33 @@ strong {
 
 p {
   font-size: 14px;
-  color: #555;
+  color: #666;
   margin-top: 5px;
 }
 
-.error-message {
-  color: #dc3545;
-  margin-top: 10px;
+.start-button {
+  display: block;
+  margin: 20px auto 0;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.start-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+.results-pre {
+  background-color: #f4f4f4;
+  padding: 10px;
+  border-radius: 8px;
+  overflow-x: auto;
 }
 </style>

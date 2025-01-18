@@ -143,13 +143,21 @@ npm run test
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
-
-[Add license information]
 
 ## Authors
 
-[Add author information]
+All members participated fully in creating this project.
+Our team's division of labor is divided as follows:
+
+王梓烨：组织小组工作；前后端程序的开发与改进；
+
+季文俊：面部打分算法的设计；前后端程序的开发与改进；
+
+章梁煜：项目整体框架的构建；前后端程序的开发与改进；
+
+郑恒：面部打分算法的设计；前后端程序的开发与改进；
+
+王昱栋：报告文档的撰写；前后端程序的开发与改进
 
 ## Acknowledgments
 
@@ -157,6 +165,3 @@ npm run test
 - Vue.js team
 - FastAPI team
 
-## Support
-
-For issues and feature requests, please use the GitHub issue tracker or contact the maintainers.

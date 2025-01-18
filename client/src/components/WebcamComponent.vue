@@ -17,9 +17,9 @@
         <li>
           <strong>三庭比例：</strong>
           <ul v-if="results[0].three_section_metrics" class="sub-results-list">
-            <li>中庭与上下庭比例的差异: {{ results[0].three_section_metrics.metric_a || '数据缺失' }}</li>
-            <li>中庭高度与整体平均比例的偏差: {{ results[0].three_section_metrics.metric_b || '数据缺失' }}</li>
-            <li>上下庭对称性的偏差: {{ results[0].three_section_metrics.metric_c || '数据缺失' }}</li>
+            <li>中庭与上下庭比例的差异: {{ results[0].three_section_metrics.Three_Section_Metric_A || '数据缺失' }}</li>
+            <li>中庭高度与整体平均比例的偏差: {{ results[0].three_section_metrics.Three_Section_Metric_B || '数据缺失' }}</li>
+            <li>上下庭对称性的偏差: {{ results[0].three_section_metrics.Three_Section_Metric_C || '数据缺失' }}</li>
           </ul>
           <p>描述：人脸垂直方向被划分为"上庭（额头）"、"中庭（鼻子）"、"下庭（嘴巴和下巴）"三部分，衡量这些区域的高度比例。数值越小越好。</p>
         </li>
@@ -31,8 +31,8 @@
         <li>
           <strong>内眼角开合度：</strong>
           <ul v-if="results[0].eye_angle_metrics" class="sub-results-list">
-            <li>左眼内角开合度: {{ results[0].eye_angle_metrics.left_eye || '数据缺失' }}°</li>
-            <li>右眼内角开合度: {{ results[0].eye_angle_metrics.right_eye || '数据缺失' }}°</li>
+            <li>左眼内角开合度: {{ results[0].eye_angle_metrics.EB_Metric_G || '数据缺失' }}°</li>
+            <li>右眼内角开合度: {{ results[0].eye_angle_metrics.EB_Metric_H || '数据缺失' }}°</li>
           </ul>
           <p>描述：角度越接近理想值（50°），眼部开合越自然美观。</p>
         </li>
@@ -51,13 +51,13 @@
         <li v-if="results[0].golden_ratio_metrics">
           <strong>黄金分割比例：</strong>
           <ul>
-            <li>整体比例: {{ (results[0].golden_ratio_metrics.overall_ratio * 100).toFixed(2) || '数据缺失' }}%</li>
-            <li v-for="(value, key) in results[0].golden_ratio_metrics.feature_ratios" :key="key">
+            <li v-for="(value, key) in results[0].golden_ratio_metrics" :key="key" >
               {{ formatRatioName(key) }}: {{ (value * 100).toFixed(2) }}%
             </li>
           </ul>
-          <p>描述：评估面部各部分是否符合黄金分割比例，分数越高表示越接近理想比例。</p>
+          <p>描述：评估面部各部分是否符合黄金分割比例，越接近0.618表示越接近理想比例。</p>
         </li>
+
         <!-- 脸型分析 -->
         <li v-if="results[0].face_shape_metrics">
           <strong>脸型分析：</strong>
@@ -101,13 +101,24 @@ export default {
     };
   },
   methods: {
+    formatRatioName(key) {
+      const ratioNames = {
+        'forehead_nose_ratio': '额头-鼻子比例',
+        'nose_chin_ratio': '鼻子-下巴比例',
+        'width_height_ratio': '宽度-高度的比例',
+        'eye_spacing_ratio': '眼睛间距比例',
+        'lip_nose_ratio': '嘴唇-鼻子比例',
+        'overall_golden_ratio': '黄金分割比例'
+      };
+      return ratioNames[key] || key;
+    },
     startWebSocket() {
-      if(this.buttonshow==true){
+      if (this.buttonshow) {
         this.buttonshow = false;
       }
 
-            // 生成唯一的客户端ID
-            this.clientId = 'client_' + Date.now();
+      // 生成唯一的客户端ID
+      this.clientId = 'client_' + Date.now();
       
       // 使用新的WebSocket地址格式
       this.websocket = new WebSocket(`ws://127.0.0.1:8000/api/v1/ws/${this.clientId}`);
@@ -162,28 +173,17 @@ export default {
       return shapeNames[shape] || shape;
     },
 
-    formatRatioName(key) {
-      const ratioNames = {
-        'forehead_nose_ratio': '额头-鼻子比例',
-        'nose_chin_ratio': '鼻子-下巴比例',
-        'eye_spacing_ratio': '眼睛间距比例',
-        'lip_nose_ratio': '嘴唇-鼻子比例'
-      };
-      return ratioNames[key] || key;
-    },
     changePage() {
-
       // 准备要更新的数据
       const newImageSrc = this.imageSrc;
-      const newJsonData =this.results;
+      const newJsonData = this.results;
 
-        // 分别调用两个actions来更新Vuex状态
+      // 分别调用两个actions来更新Vuex状态
       this.$store.dispatch('updateImageSrc', newImageSrc);
       this.$store.dispatch('updateJsonData', newJsonData);
       this.$router.push('/result');
-
     }
-  },
+  }
 };
 </script>
 

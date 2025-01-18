@@ -13,6 +13,7 @@
           {{ results[1]?.Five_Eye_Metrics || '数据缺失' }}
           <p>五眼比例偏差越小，脸部宽度分布越对称。</p>
         </li>
+
         <li>
           <strong>三庭比例：</strong>
           <ul class="sub-results-list">
@@ -35,7 +36,41 @@
           </ul>
           <p>角度接近50°，更美观。</p>
         </li>
-        <li>
+        <!-- 对称性评分 -->
+        <li v-if="results[0].symmetry_metrics">
+          <strong>面部对称性：</strong>
+          <ul>
+            <li>整体对称性: {{ (results[0].symmetry_metrics.overall_symmetry * 100).toFixed(2) || '数据缺失' }}%</li>
+            <li v-for="(value, key) in results[0].symmetry_metrics.feature_symmetry" :key="key">
+              {{ key }}: {{ (value * 100).toFixed(2) }}%
+            </li>
+          </ul>
+          <p>描述：评估面部左右对称程度，分数越高表示对称性越好。</p>
+        </li>
+        <!-- 黄金分割比例 -->
+        <li v-if="results[0].golden_ratio_metrics">
+          <strong>黄金分割比例：</strong>
+          <ul>
+            <li>整体比例: {{ (results[0].golden_ratio_metrics.overall_ratio * 100).toFixed(2) || '数据缺失' }}%</li>
+            <li v-for="(value, key) in results[0].golden_ratio_metrics.feature_ratios" :key="key">
+              {{ formatRatioName(key) }}: {{ (value * 100).toFixed(2) }}%
+            </li>
+          </ul>
+          <p>描述：评估面部各部分是否符合黄金分割比例，分数越高表示越接近理想比例。</p>
+        </li>
+        <!-- 脸型分析 -->
+        <li v-if="results[0].face_shape_metrics">
+          <strong>脸型分析：</strong>
+          <ul>
+            <li v-for="(score, shape) in results[0].face_shape_metrics" :key="shape">
+              {{ formatFaceShape(shape) }}: {{ (score * 100).toFixed(2) }}%
+            </li>
+          </ul>
+          <p>描述：分析面部轮廓与各种典型脸型的匹配程度。</p>
+        </li>
+
+        <!-- 综合评分 -->
+        <li v-if="results[0].overall_score !== undefined">
           <strong>综合评分：</strong>
           {{ results[1]?.Overall_Score || '数据缺失' }}
           <p>综合评分结合多项指标评估颜值。</p>
@@ -94,10 +129,44 @@ export default {
       };
 
       this.websocket.onclose = () => {
-        console.log("WebSocket connection closed");
+        console.log("WebSocket连接已关闭");
+        this.isConnected = false;
         this.websocket = null;
       };
     },
+
+    formatFaceShape(shape) {
+      const shapeNames = {
+        'oval': '椭圆形',
+        'round': '圆形',
+        'square': '方形',
+        'heart': '心形',
+        'diamond': '钻石形'
+      };
+      return shapeNames[shape] || shape;
+    },
+
+    formatRatioName(key) {
+      const ratioNames = {
+        'forehead_nose_ratio': '额头-鼻子比例',
+        'nose_chin_ratio': '鼻子-下巴比例',
+        'eye_spacing_ratio': '眼睛间距比例',
+        'lip_nose_ratio': '嘴唇-鼻子比例'
+      };
+      return ratioNames[key] || key;
+    },
+    changePage() {
+
+      // 准备要更新的数据
+      const newImageSrc = this.imageSrc;
+      const newJsonData =this.results;
+
+        // 分别调用两个actions来更新Vuex状态
+      this.$store.dispatch('updateImageSrc', newImageSrc);
+      this.$store.dispatch('updateJsonData', newJsonData);
+      this.$router.push('/result');
+
+    }
   },
 };
 </script>

@@ -12,6 +12,7 @@
     "three": "^0.172.0",
     "vanta": "^0.5.24",
     "vue": "^3.2.13",
+    "vue-loading-overlay": "^6.0.6",
     "vue-router": "^4.5.0",
     "vuex": "^4.1.0"
   },

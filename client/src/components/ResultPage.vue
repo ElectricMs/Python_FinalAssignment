@@ -1,20 +1,15 @@
 <template>
   <div>
     <!-- 包含图片的圆角白色容器 -->
-
     <div class="image-container">
       <div class="text1">
-        您的颜值分数是{{ faceAnalysisResults }}
+        <p>您的颜值分数是{{ faceAnalysisResults }}</p>
         <h2>获得称号：{{ awardTitle }}</h2>
         <p>{{ awardDescription }}</p>
       </div>
-      
-
       <img :src="imageSrc" alt="Stored Image" class="stored-image">
       <button @click="changePage" class="start-button">回到主页面</button>
     </div>
-    
-    <!-- 其他组件内容 -->
   </div>
 </template>
 
@@ -27,11 +22,9 @@ export default {
     },
     faceAnalysisResults() {
       const results = this.$store.getters.getJsonData;
-      
-        // 获取Overall_Score并保留一位小数
+      // 获取Overall_Score并保留一位小数
       const overallScore = parseFloat(results[0].overall_score.toFixed(1));
       return overallScore;
-      // 或者返回其他默认值
     },
     awardTitle() {
       if (this.faceAnalysisResults < 60) return '潜力无限';
@@ -51,8 +44,7 @@ export default {
       return '无'; // 其他情况
     }
   },
-  // 如果需要在组件创建时加载或更新图片，可以在这里添加生命周期钩子或其他逻辑
-  methods:{
+  methods: {
     changePage() {
       // 首先进行路由跳转
       this.$router.push('/').then(() => {
@@ -73,10 +65,12 @@ export default {
   border-radius: 15px; /* 设置圆角半径 */
   padding: 10px; /* 可选：给容器内部元素一些填充 */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 可选：添加阴影效果 */
-  width: 900px;
+  width: 90%;
+  max-width: 900px;
   margin: 0 auto;
   margin-top: 30px;
   padding: 30px;
+  text-align: center;
 }
 
 .stored-image {
@@ -86,10 +80,22 @@ export default {
   margin: 0 auto; /* 居中显示图片（如果需要） */
   border-radius: 10px; /* 如果希望图片也有圆角，可以设置此属性 */
 }
+
+.text1 {
+  margin-bottom: 20px;
+}
+
 p {
   font-size: 16px;
   line-height: 1.6;
+  margin: 10px 0;
 }
+
+h2 {
+  font-size: 24px;
+  margin: 10px 0;
+}
+
 .start-button {
   display: block;
   margin: 20px auto 0;
@@ -102,5 +108,51 @@ p {
   cursor: pointer;
   border-radius: 6px;
   transition: background-color 0.3s, transform 0.2s;
+}
+
+.start-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .image-container {
+    width: 95%;
+    padding: 20px;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+
+  p {
+    font-size: 14px;
+  }
+
+  .start-button {
+    width: 100%;
+    margin: 15px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .image-container {
+    width: 98%;
+    padding: 15px;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+
+  p {
+    font-size: 12px;
+  }
+
+  .start-button { 
+    width: 100%;
+    margin: 10px 0;
+  }
 }
 </style>

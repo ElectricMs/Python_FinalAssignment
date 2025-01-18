@@ -1,5 +1,10 @@
 <template>
   <div class="webcam-container">
+    <div v-if="isLoading" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <p>正在开启摄像头...</p>
+    </div>
+
     <div v-if="imageSrc" class="image-container">
       <h2>实时画面</h2>
       <img :src="imageSrc" alt="Webcam Stream" class="webcam-image" />
@@ -78,13 +83,31 @@
       </ul>
     </div>
 
-    <div v-if="results" class="full-results-container">
-      <h3>完整结果：</h3>
-      <pre class="results-pre">{{ results }}</pre>
+    <img v-if="buttonshow" src="@/assets/banner.png" alt="" class="small-image">
+    <div v-if="buttonshow" class="description">
+        本项目基于Mediapipe和OpenCV库，检测脸部多个特征点的位置信息，通过美学计算公式，返回五眼比例、三庭比例、达芬奇比例、内眼角开合度、面部对称性、黄金分割比例等多个美学指数。
+    </div>
+    <div v-if="buttonshow" class="description2">
+      综合以上的指数，打出客观的颜值评分，并给出用户的脸型分析。
     </div>
 
     <button v-if="buttonshow" @click="startWebSocket" class="start-button">开始实时打分</button>
-    <button v-if="imageSrc" @click="changePage" class="start-button">结束打分</button>
+    <button v-if="imageSrc" @click="changePage" class="start-button">结束打分并查看结果</button>
+    <button v-if="buttonshow" @click="showAlgorithmModal" class="start-button">算法设计详情</button>
+
+    <!-- 算法设计模态框 -->
+    <div v-if="isAlgorithmModalVisible" class="algorithm-modal-overlay">
+      <div class="algorithm-modal">
+        <h2>算法设计</h2>
+        <p>以下是我们的算法设计详情：</p>
+        <p>1. 使用Mediapipe检测脸部特征点。</p>
+        <p>2. 通过OpenCV进行图像处理。</p>
+        <p>3. 计算五眼比例、三庭比例、达芬奇比例等美学指数。</p>
+        <p>4. 评估面部对称性和黄金分割比例。</p>
+        <p>5. 分析脸型并给出综合评分。</p>
+        <button @click="hideAlgorithmModal" class="close-button">关闭</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -97,7 +120,9 @@ export default {
       imageSrc: null,
       results: null,
       isConnected: false,
-      clientId: null
+      clientId: null,
+      isLoading: false,
+      isAlgorithmModalVisible: false, // 添加模态框显示状态
     };
   },
   methods: {
@@ -117,34 +142,35 @@ export default {
         this.buttonshow = false;
       }
 
-      // 生成唯一的客户端ID
+      this.isLoading = true;
+
       this.clientId = 'client_' + Date.now();
-      
-      // 使用新的WebSocket地址格式
       this.websocket = new WebSocket(`ws://127.0.0.1:8000/api/v1/ws/${this.clientId}`);
-      
+
       this.websocket.onopen = () => {
         console.log('WebSocket连接已建立');
         this.isConnected = true;
+        this.isLoading = false;
       };
 
       this.websocket.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        console.log('收到WebSocket消息:', data); // 调试日志
+        console.log('收到WebSocket消息:', data);
 
         if (data.type === 'frame_processed') {
           const processData = data.data;
-          
+
           if (processData.status === 'success') {
             if (processData.image) {
               this.imageSrc = `data:image/jpeg;base64,${processData.image}`;
             }
             if (processData.metrics) {
-              console.log('收到的metrics数据:', processData.metrics); // 调试日志
+              console.log('收到的metrics数据:', processData.metrics);
               this.results = processData.metrics;
             }
           } else if (processData.status === 'error') {
             console.error('处理错误:', processData.error);
+            this.isLoading = false;
           }
         }
       };
@@ -153,12 +179,14 @@ export default {
         console.error("WebSocket错误:", error);
         this.isConnected = false;
         alert("连接失败，请检查后端服务是否启动！");
+        this.isLoading = false;
       };
 
       this.websocket.onclose = () => {
         console.log("WebSocket连接已关闭");
         this.isConnected = false;
         this.websocket = null;
+        this.isLoading = false;
       };
     },
 
@@ -174,20 +202,53 @@ export default {
     },
 
     changePage() {
-      // 准备要更新的数据
       const newImageSrc = this.imageSrc;
       const newJsonData = this.results;
 
-      // 分别调用两个actions来更新Vuex状态
       this.$store.dispatch('updateImageSrc', newImageSrc);
       this.$store.dispatch('updateJsonData', newJsonData);
       this.$router.push('/result');
+    },
+
+    showAlgorithmModal() {
+      this.isAlgorithmModalVisible = true;
+    },
+
+    hideAlgorithmModal() {
+      this.isAlgorithmModalVisible = false;
     }
   }
 };
 </script>
 
 <style>
+/* 其他样式 */
+
+.small-image {
+  width: 700px;
+  height: auto;
+  border-radius: 10px;
+}
+
+.description {
+  color: gray;
+  line-height: 30px;
+  font-size: 20px;
+  padding-left: 70px;
+  padding-right: 70px;
+  padding-top: 30px;
+}
+
+.description2 {
+  font-weight: bold;
+  line-height: 30px;
+  font-size: 20px;
+  padding-left: 40px;
+  padding-right: 40px;
+  padding-top: 30px;
+  margin-bottom: 30px;
+}
+
 .webcam-container {
   font-family: 'Roboto', sans-serif;
   max-width: 800px;
@@ -197,6 +258,28 @@ export default {
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .webcam-container {
+    max-width: 100%;
+    padding: 10px;
+  }
+
+  .small-image {
+    width: 100%;
+  }
+
+  .description, .description2 {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .start-button {
+    width: 100%;
+    margin: 10px 0;
+  }
 }
 
 .image-container {
@@ -277,5 +360,87 @@ p {
   padding: 10px;
   border-radius: 8px;
   overflow-x: auto;
+}
+
+/* 加载动画样式 */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.689);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+.loading-spinner {
+  border: 16px solid #f3f3f3;
+  border-top: 16px solid #3498db;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 算法设计模态框样式 */
+.algorithm-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+}
+
+.algorithm-modal {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  width: 80%;
+  max-width: 600px;
+  text-align: center;
+}
+
+.algorithm-modal h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.algorithm-modal p {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 15px;
+}
+
+.close-button {  
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold; 
+  background-color: #0091ff;
+  color: #333;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.close-button:hover {
+  background-color: #e6b800;
+  transform: translateY(-2px);
 }
 </style>

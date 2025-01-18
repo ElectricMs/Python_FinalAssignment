@@ -1,11 +1,11 @@
 <template>
     <div>
-      <h1>实时人脸识别打分</h1>
+      <h1>实时人脸识别打分系统</h1>
       <Webcam />
     </div>
-  </template>
+</template>
   
-  <script>
+<script>
   import Webcam from "./WebcamComponent.vue";
   
   export default {
@@ -14,9 +14,9 @@
       Webcam,
     },
   };
-  </script>
+</script>
   
-  <style>
+<style>
   body {
     font-family: Arial, sans-serif;
     text-align: center;
@@ -27,6 +27,7 @@
   
   h1 {
     margin-top: 20px;
+    font-size: 25px;
     color: #333;
   }
-  </style>
+</style>
